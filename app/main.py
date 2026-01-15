@@ -1,31 +1,20 @@
 from fastapi import FastAPI, WebSocket
 from fastapi.responses import HTMLResponse
+from pydantic_settings import BaseSettings
+import uvicorn
 
+class Settings(BaseSettings):
+    app_name: str = "fpt"
+    admin_email: str | None = None
+    fpt_port: int = 80
+    fpt_host: str = "127.0.0.1"
+
+settings = Settings()
 app = FastAPI()
 
 @app.get("/")
 async def root():
-    return HTMLResponse(html)
-
-@app.get("/items/{item_id}")
-async def read_item(item_id: int):
-    return {"item_id": item_id}
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        data = await websocket.receive_text()
-        await websocket.send_text(f"Message text was: {data}")
-
-#def main():
-#    print("Hello from fpt!")
-#
-#
-#if __name__ == "__main__":
-#    main()
-
-html = """
+    return HTMLResponse("""
 <!DOCTYPE html>
 <html>
     <head>
@@ -57,5 +46,22 @@ html = """
         </script>
     </body>
 </html>
-"""
+""")
+
+@app.get("/items/{item_id}")
+async def read_item(item_id: int):
+    return {"item_id": item_id}
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_text()
+        await websocket.send_text(f"Message text was: {data} {repr(settings)}")
+
+def main():
+    uvicorn.run(app, host=settings.fpt_host, port=settings.fpt_port)
+
+if __name__ == "__main__":
+    main()
 
