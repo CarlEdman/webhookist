@@ -1,7 +1,7 @@
 [project]
 name = "fpt"
 version = "0.1.0"
-description = "Add your description here"
+description = "A simple project to teach myself FastAPI and related packages."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -9,5 +9,6 @@ dependencies = [
     "pydantic>=2.12.5",
     "python-multipart>=0.0.21",
     "redis[hiredis]>=7.1.0",
+    "sqlmodel>=0.0.31",
     "websocket>=0.2.1",
 ]
