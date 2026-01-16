@@ -1,25 +1,18 @@
+#FROM ghcr.io/astral-sh/uv:alpine
 FROM python:3.13-slim-trixie
-
-# The installer requires curl (and certificates) to download the release archive
-RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
-
-# Download the latest installer
-ADD https://astral.sh/uv/0.9.25/install.sh /uv-installer.sh
-
-# Run the installer then remove it
-RUN sh /uv-installer.sh && rm /uv-installer.sh
-
-# Ensure the installed binary is on the `PATH`
-ENV PATH="/root/.local/bin/:$PATH"
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Copy the project into the image
-COPY ./app /app
+COPY . /app
 
 # Disable development dependencies
 ENV UV_NO_DEV=1
+
+ENV FPT_HOST=0.0.0.0
+ENV FPT_PORT=7777
 
 # Sync the project into a new environment, asserting the lockfile is up to date
 WORKDIR /app
 RUN uv sync --locked
 
-CMD ["python", "/app/main.py"]
+CMD ["uv", "run", "src/server.py"]

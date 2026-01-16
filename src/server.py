@@ -2,8 +2,9 @@
 
 import uvicorn
 import sqlmodel
+import asyncio
 
-from fastapi import FastAPI, WebSocket, Depends, HTTPException, Query
+from fastapi import FastAPI, WebSocket, Depends, HTTPException, Query, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from typing import Annotated
 from sqlmodel import Field, Session, SQLModel
@@ -25,8 +26,7 @@ async def lifespan(app: FastAPI):
 SessionDep = Annotated[Session, Depends(get_session)]
 
 app = FastAPI(lifespan=lifespan)
-engine = sqlmodel.create_engine(settings.fpt_sqlurl, connect_args={"check_same_thread": False})
-
+engine = sqlmodel.create_engine(settings.sqlurl, connect_args={"check_same_thread": False})
 app.mount("/static", static , name="static")
 
 @app.get("/favicon.ico")
@@ -44,12 +44,29 @@ async def root() -> FileResponse:
 async def read_item(item_id: int):
   return {"item_id": item_id}
 
+websockets : set[WebSocket] = set()
+
+async def send_to_all(msg: str):
+  async with asyncio.TaskGroup() as tg:
+    for w in websockets:
+      tg.create_task(w.send_text(msg))
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
   await websocket.accept()
-  while True:
-    data = await websocket.receive_text()
-    await websocket.send_text(f"Message text was: {data} {repr(settings)}")
+  websockets.add(websocket)
+  await send_to_all(f"Socket {repr(websocket)} opened; Now {len(websockets)} WebSockets.")
+  try:
+    while True:
+      data = await websocket.receive_text()
+      await send_to_all(f"Message text from {repr(websocket)} was: {data} {repr(settings)}")
+  except WebSocketDisconnect:
+    # This block is executed when the client disconnects
+    websockets.remove(websocket)
+    await send_to_all(f"Socket {repr(websocket)} disconnected; Now {len(websockets)} remaining WebSockets.")
+  except Exception as e:
+    # Handle other potential exceptions
+    websockets.remove(websocket)
 
 if __name__ == "__main__":
-  uvicorn.run(app, host=settings.fpt_host, port=settings.fpt_port)
+  uvicorn.run(app, host=settings.host, port=settings.port)

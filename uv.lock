@@ -235,6 +235,7 @@ dependencies = [
     { name = "redis", extra = ["hiredis"] },
     { name = "sqlmodel" },
     { name = "typer" },
+    { name = "uvicorn" },
     { name = "websocket" },
 ]
 
@@ -247,6 +248,7 @@ requires-dist = [
     { name = "redis", extras = ["hiredis"], specifier = ">=7.1.0" },
     { name = "sqlmodel", specifier = ">=0.0.31" },
     { name = "typer", specifier = ">=0.21.1" },
+    { name = "uvicorn", specifier = ">=0.40.0" },
     { name = "websocket", specifier = ">=0.2.1" },
 ]
 
