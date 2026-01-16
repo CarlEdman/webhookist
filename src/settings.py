@@ -1,3 +1,5 @@
+#! python3
+
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
@@ -7,3 +9,6 @@ class Settings(BaseSettings):
 # postgresql://[user[:password]@][hostspec][:port][/dbname][?paramspec]
 
 settings = Settings()
+
+if __name__ == "__main__":
+  pass

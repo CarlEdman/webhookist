@@ -1,4 +1,5 @@
 #! python3
+
 import typer
 
 from settings import settings
