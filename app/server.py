@@ -1,16 +1,28 @@
-from fastapi import FastAPI, WebSocket
+import uvicorn
+import sqlmodel
+
+from fastapi import FastAPI, WebSocket, Depends, HTTPException, Query
 from fastapi.responses import HTMLResponse
 from pydantic_settings import BaseSettings
-import uvicorn
+from typing import Annotated
+from sqlmodel import Field, Session, SQLModel
+from contextlib import asynccontextmanager
 
-class Settings(BaseSettings):
-  app_name: str = "fpt"
-  admin_email: str | None = None
-  fpt_port: int = 80
-  fpt_host: str = "127.0.0.1"
+from settings import settings
 
-settings = Settings()
-app = FastAPI()
+def get_session():
+    with Session(engine) as session:
+        yield session
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+  SQLModel.metadata.create_all(engine)
+  yield
+
+SessionDep = Annotated[Session, Depends(get_session)]
+
+app = FastAPI(lifespan=lifespan)
+engine = sqlmodel.create_engine(settings.fpt_sqlurl, connect_args={"check_same_thread": False})
 
 @app.get("/")
 async def root():
@@ -59,9 +71,6 @@ async def websocket_endpoint(websocket: WebSocket):
     data = await websocket.receive_text()
     await websocket.send_text(f"Message text was: {data} {repr(settings)}")
 
-def main():
-  uvicorn.run(app, host=settings.fpt_host, port=settings.fpt_port)
-
 if __name__ == "__main__":
-  main()
+  uvicorn.run(app, host=settings.fpt_host, port=settings.fpt_port)
 
