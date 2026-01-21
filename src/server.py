@@ -6,6 +6,8 @@ import asyncio
 
 from fastapi import FastAPI, WebSocket, Depends, HTTPException, Query, Response, WebSocketDisconnect, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated
 from sqlmodel import Field, Session, SQLModel
 from contextlib import asynccontextmanager
@@ -13,6 +15,7 @@ from contextlib import asynccontextmanager
 from settings import settings
 from templates import templates
 from static import static
+from security import securityscheme
 
 def get_session():
   with Session(engine) as session:
@@ -43,6 +46,10 @@ async def root() -> Response:
 @app.get("/items/{item_id}")
 async def read_item(item_id: int) -> Response:
   return JSONResponse({"item_id": item_id})
+
+@app.get("/items/")
+async def read_items(token: Annotated[str, Depends(securityscheme)]):
+  return {"token": token}
 
 websockets : set[WebSocket] = set()
 

@@ -6,4 +6,5 @@ from settings import settings
 templates = Jinja2Templates(directory="templates")
 
 if __name__ == "__main__":
+#  templates.TemplateResponse()
   pass
