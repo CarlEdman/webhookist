@@ -7,15 +7,15 @@ import asyncio
 from fastapi import FastAPI, WebSocket, Depends, HTTPException, Query, Response, WebSocketDisconnect, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
-from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated
 from sqlmodel import Field, Session, SQLModel
 from contextlib import asynccontextmanager
+from pydantic import BaseModel
 
 from settings import settings
 from templates import templates
 from static import static
-from security import securityscheme
+from security import get_current_active_user, User
 
 def get_session():
   with Session(engine) as session:
@@ -47,9 +47,9 @@ async def root() -> Response:
 async def read_item(item_id: int) -> Response:
   return JSONResponse({"item_id": item_id})
 
-@app.get("/items/")
-async def read_items(token: Annotated[str, Depends(securityscheme)]):
-  return {"token": token}
+# @app.get("/items/")
+# async def read_items(token: Annotated[str, Depends(security_scheme)]):
+#   return {"token": token}
 
 websockets : set[WebSocket] = set()
 
@@ -72,6 +72,13 @@ async def websocket_endpoint(websocket: WebSocket):
     await broadcast(f"Socket {repr(websocket)} disconnected; now {len(websockets)} remaining WebSockets.")
   except Exception as e:
     websockets.remove(websocket)
+
+@app.get("/users/me")
+async def read_users_me(current_user: Annotated[User, Depends(get_current_active_user)]) -> User:
+  return current_user
+
+
+
 
 if __name__ == "__main__":
   uvicorn.run(app, host=settings.host, port=settings.port)
