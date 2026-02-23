@@ -1,10 +1,8 @@
 #! python3
-
 import uvicorn
 import sqlmodel
-import asyncio
 
-from fastapi import FastAPI, WebSocket, Depends, HTTPException, Query, Response, WebSocketDisconnect, status
+from fastapi import FastAPI, Depends, HTTPException, Query, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
@@ -17,6 +15,7 @@ from settings import settings
 from templates import templates
 from static import static
 from security import get_current_active_user, User
+import websockets
 
 def get_session():
   with Session(engine) as session:
@@ -32,6 +31,7 @@ SessionDep = Annotated[Session, Depends(get_session)]
 app = FastAPI(lifespan=lifespan)
 engine = sqlmodel.create_engine(settings.sqlurl, connect_args={"check_same_thread": False})
 app.mount("/static", static , name="static")
+
 
 #app.add_middleware(HTTPSRedirectMiddleware)
 
@@ -54,34 +54,9 @@ async def read_item(item_id: int) -> Response:
 # async def read_items(token: Annotated[str, Depends(security_scheme)]):
 #   return {"token": token}
 
-websockets : set[WebSocket] = set()
-
-async def broadcast(msg: str):
-  async with asyncio.TaskGroup() as tg:
-    for w in websockets:
-      tg.create_task(w.send_text(msg))
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-  await websocket.accept()
-  websockets.add(websocket)
-  await broadcast(f"Socket {repr(websocket)} opened; now {len(websockets)} WebSockets.")
-  try:
-    while True:
-      data = await websocket.receive_text()
-      await broadcast(f"Message text from {repr(websocket)} was: {data} {repr(settings)}")
-  except WebSocketDisconnect:
-    websockets.remove(websocket)
-    await broadcast(f"Socket {repr(websocket)} disconnected; now {len(websockets)} remaining WebSockets.")
-  except Exception as e:
-    websockets.remove(websocket)
-
 @app.get("/users/me")
 async def read_users_me(current_user: Annotated[User, Depends(get_current_active_user)]) -> User:
   return current_user
-
-
-
 
 if __name__ == "__main__":
   uvicorn.run(app, host=settings.host, port=settings.port)
