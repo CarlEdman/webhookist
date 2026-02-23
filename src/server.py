@@ -7,6 +7,7 @@ import asyncio
 from fastapi import FastAPI, WebSocket, Depends, HTTPException, Query, Response, WebSocketDisconnect, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from typing import Annotated
 from sqlmodel import Field, Session, SQLModel
 from contextlib import asynccontextmanager
@@ -31,6 +32,8 @@ SessionDep = Annotated[Session, Depends(get_session)]
 app = FastAPI(lifespan=lifespan)
 engine = sqlmodel.create_engine(settings.sqlurl, connect_args={"check_same_thread": False})
 app.mount("/static", static , name="static")
+
+#app.add_middleware(HTTPSRedirectMiddleware)
 
 @app.get("/favicon.ico")
 async def favicon() -> Response:
