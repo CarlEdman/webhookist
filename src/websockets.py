@@ -3,6 +3,7 @@
 import asyncio
 
 from fastapi import WebSocket, WebSocketDisconnect
+from settings import settings
 
 websockets : set[WebSocket] = set()
 

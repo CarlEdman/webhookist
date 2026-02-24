@@ -11,16 +11,16 @@ from fastapi import FastAPI, Depends, HTTPException, Query, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
-from typing import Annotated
+from typing import Annotated, Dict
 from sqlmodel import Session, SQLModel, select, func
 from contextlib import asynccontextmanager
 
 from settings import settings
 from templates import templates
 from static import static
-from security import get_current_user, hash_password
+from security import TokenDep, hash_password, get_current_user
 from websockets import endpoint as ws_endpoint
-from models import User, UserInDB
+from models import User, UserInDB, Hook
 from log import log
 
 def get_session():
@@ -28,8 +28,7 @@ def get_session():
     yield session
 
 SessionDep = Annotated[Session, Depends(get_session)]
-UserDep = Annotated[User, Depends(get_user)]
-
+UserDep = Annotated[User, Depends(get_current_user)]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -63,17 +62,38 @@ async def root() -> Response:
 # async def root() -> Response:
 #   return RedirectResponse(url="static/index.html", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
-@app.get("/hooks/{user_id}")
-async def read_user(user_id: int, user: UserDep) -> Response:
-  return JSONResponse({"user_id": user_id})
-
-@app.get("/hooks/")
-async def read_users(token: Annotated[str, Depends(security_scheme)], user: UserDep):
+@app.get("/users/")
+async def read_users(user: UserDep, session: SessionDep) -> Dict[str, str]:
+  "Dump "
   return {"token": token}
 
+@app.get("/users/{user_id}")
+async def read_user(hook_id: int, user: UserDep, session: SessionDep) -> Response:
+  return JSONResponse({"hook_id": hook_id})
+
 @app.get("/users/me")
-async def read_users_me(user: UserDep) -> User:
+async def read_users_me(user: UserDep, session: SessionDep) -> User:
   return user
+
+@app.get("/hooks/")
+async def read_hook (user: UserDep, session: SessionDep) -> Dict[str, str]:
+  return {"token": token}
+
+@app.get("/hooks/{hook_id}")
+async def read_hook(hook_id: int, user: UserDep, session: SessionDep) -> Response:
+  return JSONResponse({"hook_id": hook_id})
+
+@app.post("/hooks")
+async def create_hook(hook_id: int, user: UserDep, session: SessionDep) -> Response:  
+  pass
+
+@app.delete("/hooks/{hook_id}")
+async def delete_hook(hook_id: int, user: UserDep, session: SessionDep) -> Response: 
+  pass
+
+@app.patch("/hooks/{hook_id}")
+async def modify_hook(hook_id: int, user: UserDep, session: SessionDep) -> Response:
+  pass
 
 if __name__ == "__main__":
   uvicorn.run(app, host=settings.host, port=settings.port)
