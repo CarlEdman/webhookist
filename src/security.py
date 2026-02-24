@@ -34,6 +34,7 @@ def get_user(db, username: str) -> User | None:
     return UserInDB(**db[username])
 
 security_scheme = OAuth2PasswordBearer(tokenUrl="token")
+TokenDep = Annotated[str, Depends(security_scheme)]
 base_hash= hashlib.sha256(settings.salt.encode())
 
 def hash_password(password: str) -> str:
@@ -43,7 +44,7 @@ def hash_password(password: str) -> str:
 def test_password(password: str, hash:str) -> Boolean:
   return hash == hash_password(password)
 
-async def get_current_user(token: Annotated[str, Depends(security_scheme)]) -> User:
+async def get_current_user(token: TokenDep) -> User:
   user = fake_decode_token(token)
   if not user:
     raise HTTPException(
