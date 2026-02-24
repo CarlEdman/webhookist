@@ -1,10 +1,9 @@
 from sqlalchemy import Boolean
 import sqlmodel
 
-from sqlmodel import Field, Session, SQLModel, Column, TEXT
+from sqlmodel import Field, Session, SQLModel, Column
 
-class User(SQLModel, table=True):
-  __tablename__ = "users"
+class User(SQLModel):
   id: int | None = Field(default=None, primary_key=True)
   username: str = Field(index=True, unique=True)
 #  email: str | None = Field(default=None)
@@ -12,7 +11,8 @@ class User(SQLModel, table=True):
   disabled: Boolean = Field(default=False)
   superuser: Boolean = Field(default=False)
 
-class UserInDB(User):
+class UserInDB(User, table=True):
+  __tablename__ = "users"
   password_hash: str = Field()
 
 class Hook(SQLModel, table=True):
