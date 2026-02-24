@@ -19,5 +19,5 @@ class Hook(SQLModel, table=True):
   __tablename__ = "hooks"
   id: int = Field(default=None, primary_key=True)
   user_id: int = Field(default=None)
-  name: str = Field(index=True, max_length=255, unique=True)
+  name: str = Field(index=True, max_length=255)
   content: str = Field(index=False, max_length=2**16-1)

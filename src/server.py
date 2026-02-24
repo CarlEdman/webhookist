@@ -1,5 +1,9 @@
 #! python3
 
+import logging
+
+#import secrets
+
 import uvicorn
 import sqlmodel
 
@@ -8,27 +12,38 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, File
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from typing import Annotated
-from sqlmodel import Field, Session, SQLModel
+from sqlmodel import Session, SQLModel, select, func
 from contextlib import asynccontextmanager
-from pydantic import BaseModel
 
 from settings import settings
 from templates import templates
 from static import static
-from security import get_current_active_user, User
+from security import get_current_user, hash_password
 from websockets import endpoint as ws_endpoint
-import models
+from models import User, UserInDB
+from log import log
 
 def get_session():
   with Session(engine) as session:
     yield session
 
+SessionDep = Annotated[Session, Depends(get_session)]
+UserDep = Annotated[User, Depends(get_user)]
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
   SQLModel.metadata.create_all(engine)
+  with Session(engine) as session:
+    user = session.get(User, 0)
+    if not user:
+ #     pw = secrets.token_urlsafe(nbytes=6)
+      pw = "ragamuffin"
+      user = UserInDB(id = 0, username="superuser", superuser=True, password_hash=hash_password(pw))
+      session.add(user)
+      session.commit()
+      log.info(f'No superuser account found.  Generating new one with password "{pw}"')
   yield
-
-SessionDep = Annotated[Session, Depends(get_session)]
 
 app = FastAPI(lifespan=lifespan)
 engine = sqlmodel.create_engine(settings.sqlurl, connect_args={"check_same_thread": False}, echo=True)
@@ -48,17 +63,17 @@ async def root() -> Response:
 # async def root() -> Response:
 #   return RedirectResponse(url="static/index.html", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
-@app.get("/items/{item_id}")
-async def read_item(item_id: int) -> Response:
-  return JSONResponse({"item_id": item_id})
+@app.get("/hooks/{user_id}")
+async def read_user(user_id: int, user: UserDep) -> Response:
+  return JSONResponse({"user_id": user_id})
 
-# @app.get("/items/")
-# async def read_items(token: Annotated[str, Depends(security_scheme)]):
-#   return {"token": token}
+@app.get("/hooks/")
+async def read_users(token: Annotated[str, Depends(security_scheme)], user: UserDep):
+  return {"token": token}
 
 @app.get("/users/me")
-async def read_users_me(current_user: Annotated[User, Depends(get_current_active_user)]) -> User:
-  return current_user
+async def read_users_me(user: UserDep) -> User:
+  return user
 
 if __name__ == "__main__":
   uvicorn.run(app, host=settings.host, port=settings.port)

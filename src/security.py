@@ -1,7 +1,7 @@
 #! python3
 
-import hashlib
-
+from passlib.hash import argon2 as hasher
+from passlib.utils import saslprep
 from fastapi import FastAPI, WebSocket, Depends, HTTPException, Query, Response, WebSocketDisconnect, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
@@ -34,14 +34,14 @@ def get_user(db, username: str) -> User | None:
     return UserInDB(**db[username])
 
 security_scheme = OAuth2PasswordBearer(tokenUrl="token")
-base_hash= hashlib.sha256(settings.salt.encode())
 
 def hash_password(password: str) -> str:
-  h = base_hash.clone()
-  return h.update(password.encode()).hexdigest()
+  password = saslprep(password)
+  return hasher.hash(password)
 
-def test_password(password: str, hash:str) -> Boolean:
-  return hash == hash_password(password)
+def test_password(password: str, hash: str) -> Boolean:
+  password = saslprep(password)
+  return hasher.verify(password, hash)
 
 async def get_current_user(token: Annotated[str, Depends(security_scheme)]) -> User:
   user = fake_decode_token(token)
@@ -59,9 +59,3 @@ async def get_current_user(token: Annotated[str, Depends(security_scheme)]) -> U
     )
     
   return user
-
-async def get_current_active_user(current_user: Annotated[User, Depends(get_current_user)]) -> User:
-  if current_user.disabled:
-    raise HTTPException(status_code=400, detail="Inactive user")
-  return current_user
-
