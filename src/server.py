@@ -15,7 +15,8 @@ from settings import settings
 from templates import templates
 from static import static
 from security import get_current_active_user, User
-import websockets
+from websockets import endpoint as ws_endpoint
+import models
 
 def get_session():
   with Session(engine) as session:
@@ -29,9 +30,9 @@ async def lifespan(app: FastAPI):
 SessionDep = Annotated[Session, Depends(get_session)]
 
 app = FastAPI(lifespan=lifespan)
-engine = sqlmodel.create_engine(settings.sqlurl, connect_args={"check_same_thread": False})
+engine = sqlmodel.create_engine(settings.sqlurl, connect_args={"check_same_thread": False}, echo=True)
 app.mount("/static", static , name="static")
-
+app.websocket("/ws", name="ws")(ws_endpoint)
 
 #app.add_middleware(HTTPSRedirectMiddleware)
 

@@ -9,8 +9,7 @@ async def broadcast(msg: str):
     for w in websockets:
       tg.create_task(w.send_text(msg))
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+async def endpoint(websocket: WebSocket):
   await websocket.accept()
   websockets.add(websocket)
   await broadcast(f"Socket {repr(websocket)} opened; now {len(websockets)} WebSockets.")
