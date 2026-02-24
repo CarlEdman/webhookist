@@ -1,3 +1,5 @@
+#! python3
+
 import asyncio
 
 from fastapi import WebSocket, WebSocketDisconnect

@@ -6,6 +6,7 @@ class Settings(BaseSettings):
   port: int = 80
   host: str = "127.0.0.1"
   sqlurl: str = "sqlite:///database.db"
+  salt: str = "webhooker"
 # sqlurl: str = "postgresql://user:password@hostspec:port/dbname?paramspec"
 
 settings = Settings(

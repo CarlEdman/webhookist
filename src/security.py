@@ -1,11 +1,16 @@
 #! python3
 
+import hashlib
+
 from fastapi import FastAPI, WebSocket, Depends, HTTPException, Query, Response, WebSocketDisconnect, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from typing import Annotated
 
+from sqlalchemy import Boolean
+
 from settings import settings
+from models import User, UserInDB
 
 fake_users_db = {
   "johndoe": {
@@ -24,27 +29,19 @@ fake_users_db = {
   },
 }
 
-class User(BaseModel):
-  username: str
-  email: str | None = None
-  full_name: str | None = None
-  disabled: bool = False
-
-class UserInDB(User):
-  hashed_password: str
-
 def get_user(db, username: str) -> User | None:
   if username in db:
     return UserInDB(**db[username])
 
 security_scheme = OAuth2PasswordBearer(tokenUrl="token")
+base_hash= hashlib.sha256(settings.salt.encode())
 
-def fake_hash_password(password: str) -> str:
-  return "fakehashed" + password
+def hash_password(password: str) -> str:
+  h = base_hash.clone()
+  return h.update(password.encode()).hexdigest()
 
-def fake_decode_token(token) -> User:
-  user = get_user(fake_users_db, token)
-  return user
+def test_password(password: str, hash:str) -> Boolean:
+  return hash == hash_password(password)
 
 async def get_current_user(token: Annotated[str, Depends(security_scheme)]) -> User:
   user = fake_decode_token(token)
@@ -54,14 +51,17 @@ async def get_current_user(token: Annotated[str, Depends(security_scheme)]) -> U
       detail="Not authenticated",
       headers={"WWW-Authenticate": "Bearer"},
     )
+  if user.disabled:
+    raise HTTPException(
+      status_code=status.HTTP_403_FORBIDDEN,
+      detail="Inactive user",
+      headers={"WWW-Authenticate": "Bearer"},
+    )
+    
   return user
 
 async def get_current_active_user(current_user: Annotated[User, Depends(get_current_user)]) -> User:
   if current_user.disabled:
     raise HTTPException(status_code=400, detail="Inactive user")
   return current_user
-
-
-if __name__ == "__main__":
-  pass
 
