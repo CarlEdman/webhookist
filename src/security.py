@@ -34,6 +34,7 @@ def get_user(db, username: str) -> User | None:
     return UserInDB(**db[username])
 
 security_scheme = OAuth2PasswordBearer(tokenUrl="token")
+TokenDep = Annotated[str, Depends(security_scheme)]
 
 def hash_password(password: str) -> str:
   password = saslprep(password)
@@ -43,7 +44,7 @@ def test_password(password: str, hash: str) -> Boolean:
   password = saslprep(password)
   return hasher.verify(password, hash)
 
-async def get_current_user(token: Annotated[str, Depends(security_scheme)]) -> User:
+async def get_current_user(token: TokenDep) -> User:
   user = fake_decode_token(token)
   if not user:
     raise HTTPException(
