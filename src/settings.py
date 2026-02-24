@@ -6,8 +6,8 @@ class Settings(BaseSettings):
   port: int = 80
   host: str = "127.0.0.1"
   sqlurl: str = "sqlite:///database.db"
-  salt: str = "webhooker"
 # sqlurl: str = "postgresql://user:password@hostspec:port/dbname?paramspec"
+  salt: str = "webhooker"
 
 settings = Settings(
   _env_prefix='FPT_', # Prefix for all env vars
