@@ -1,9 +1,7 @@
 #! python3
 
 import logging
-
 #import secrets
-
 import uvicorn
 import sqlmodel
 
@@ -45,11 +43,10 @@ async def lifespan(app: FastAPI):
   yield
 
 app = FastAPI(lifespan=lifespan)
+app.add_middleware(HTTPSRedirectMiddleware)
 engine = sqlmodel.create_engine(settings.sqlurl, connect_args={"check_same_thread": False}, echo=True)
 app.mount("/static", static , name="static")
 app.websocket("/ws", name="ws")(ws_endpoint)
-
-#app.add_middleware(HTTPSRedirectMiddleware)
 
 @app.get("/favicon.ico")
 async def favicon() -> Response:
