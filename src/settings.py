@@ -7,7 +7,7 @@ class Settings(BaseSettings):
   host: str = "127.0.0.1"
   sqlurl: str = "sqlite:///database.db"
 # sqlurl: str = "postgresql://user:password@hostspec:port/dbname?paramspec"
-  salt: str = "webhooker"
+  salt: str = "webhookist"
 
 settings = Settings(
   _env_prefix='FPT_', # Prefix for all env vars

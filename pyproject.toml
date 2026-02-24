@@ -1,5 +1,5 @@
 [project]
-name = "webhooker"
+name = "webhookist"
 version = "0.1.0"
 description = "A simple project to teach myself FastAPI and related packages."
 readme = "README.md"
