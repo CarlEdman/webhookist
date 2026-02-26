@@ -52,6 +52,10 @@ app.websocket("/ws", name="ws")(ws_endpoint)
 async def favicon() -> Response:
   return FileResponse( "static/favicon.ico")
 
+@app.get("/styles.css")
+async def favicon() -> Response:
+  return FileResponse( "static/styles.css")
+
 @app.get("/")
 async def root() -> Response:
   return FileResponse("static/index.html")
