@@ -59,8 +59,6 @@ async def favicon() -> Response:
 @app.get("/")
 async def root() -> Response:
   return FileResponse("static/index.html")
-
-# async def root() -> Response:
 #   return RedirectResponse(url="static/index.html", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
 @app.get("/users/")
